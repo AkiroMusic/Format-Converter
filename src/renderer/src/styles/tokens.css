@@ -1,0 +1,116 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ===== Design Tokens ===== */
+
+:root {
+  /* Colors — Blue + Purple palette */
+  --bg-base: #12141A;
+  --surface-1: #1B1E27;
+  --surface-2: #242833;
+  --border: #313644;
+  --text-primary: #EDEBE4;
+  --text-secondary: #8D93A3;
+  --text-tertiary: #5B606E;
+  --accent: #6C8CFF;
+  --accent-hover: #86A3FF;
+  --accent-secondary: #A78BFA;
+  --success: #4FAE8A;
+  --error: #D9695F;
+
+  /* Border Radius */
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-full: 999px;
+
+  /* Spacing */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+
+  /* Transitions */
+  --ease-default: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --duration-hover: 150ms;
+  --duration-panel: 220ms;
+}
+
+/* ===== Light Theme ===== */
+[data-theme='light'] {
+  --bg-base: #F5F5F7;
+  --surface-1: #FFFFFF;
+  --surface-2: #EBEBED;
+  --border: #D1D1D6;
+  --text-primary: #1C1C1E;
+  --text-secondary: #6C6C70;
+  --text-tertiary: #AEAEB2;
+  --accent: #5B7FFF;
+  --accent-hover: #4A6FE8;
+  --accent-secondary: #8B6FE8;
+  --success: #34C759;
+  --error: #FF3B30;
+}
+
+/* Font Face Declarations - fonts to be placed in assets/fonts/ */
+@font-face {
+  font-family: 'Fraunces';
+  src: url('../assets/fonts/Fraunces.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Inter';
+  src: url('../assets/fonts/Inter.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'IBM Plex Mono';
+  src: url('../assets/fonts/IBMPlexMono.woff2') format('woff2');
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Base styles */
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg-base);
+  color: var(--text-primary);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow: hidden;
+  user-select: none;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-tertiary);
+}
