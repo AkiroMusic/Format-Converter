@@ -40,6 +40,10 @@ export interface FfmpegOptions {
   ffmpegBin?: string
   /** Explicit ffprobe binary path (overrides resolver) */
   ffprobeBin?: string
+  /** Metadata to embed into output (overrides -map_metadata -1) */
+  metadata?: Record<string, string>
+  /** Path to a cover image file to embed */
+  coverImagePath?: string
 }
 
 export interface FfmpegResult {
@@ -212,7 +216,9 @@ export async function run(
     onProgress,
     signal,
     ffmpegBin,
-    ffprobeBin
+    ffprobeBin,
+    metadata,
+    coverImagePath
   } = options
 
   // Resolve binary paths
@@ -220,13 +226,30 @@ export async function run(
   const resolvedFfprobeBin = ffprobeBin ?? resolveFfprobePath({ platform: process.platform })
 
   // --- Build ffmpeg argument list ---
-  const args: string[] = [
-    '-y',
-    '-i', inputPath,
-    '-vn',
-    '-map_metadata', '-1',
-    '-write_id3v2', '1'
-  ]
+  const args: string[] = ['-y']
+
+  if (coverImagePath) {
+    // When a cover image is provided, we must explicitly map streams:
+    //   0:a → audio from the first input
+    //   1:0 → cover image from the second input
+    args.push('-i', inputPath, '-map', '0:a')
+    args.push('-i', coverImagePath, '-map', '1:0', '-disposition:v', 'attached_pic')
+    args.push('-map_metadata', '-1')
+  } else {
+    args.push('-i', inputPath, '-vn', '-map_metadata', '-1')
+  }
+
+  // Write ID3v2 tags for MP3/M4A output (needed even with metadata flag)
+  if (format === 'mp3' || format === 'm4a' || format === 'aac') {
+    args.push('-write_id3v2', '1')
+  }
+
+  // Apply metadata tags
+  if (metadata) {
+    for (const [key, value] of Object.entries(metadata)) {
+      if (value) args.push('-metadata', `${key}=${value}`)
+    }
+  }
 
   switch (format) {
     case 'mp3': {
