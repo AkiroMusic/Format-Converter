@@ -321,8 +321,8 @@ function DropZone(): JSX.Element {
           <FormatBadge ext=".kgm" label="KGM/KGMA/VPR" desc={t('format.kgm')} />
           <FormatBadge ext=".qmc" label="QMC v1" desc={t('format.qmc')} />
           <FormatBadge ext=".mflac" label="MFLAC/MGG/KGG" desc={t('format.phase2')} dimmed />
-          <FormatBadge ext=".mp3/.flac/.wav" label="MP3/FLAC/WAV" desc="Plain audio" />
-          <FormatBadge ext=".m4a/.aac/.ogg/.opus" label="M4A/AAC/OGG/Opus" desc="Plain audio" />
+          <FormatBadge ext=".mp3/.flac/.wav" label="MP3/FLAC/WAV" desc={t('format.plainAudio')} />
+          <FormatBadge ext=".m4a/.aac/.ogg/.opus" label="M4A/AAC/OGG/Opus" desc={t('format.plainAudio')} />
         </div>
       </div>
     </div>

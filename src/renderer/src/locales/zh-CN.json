@@ -91,6 +91,7 @@
   "format.alac": "ALAC",
   "format.m4a": "M4A (AAC)",
   "format.opus": "Opus",
+  "format.plainAudio": "普通音频",
   "theme.dark": "深色",
   "theme.light": "浅色",
   "theme.sepia": "暖棕",

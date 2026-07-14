@@ -91,6 +91,7 @@
   "format.alac": "ALAC",
   "format.m4a": "M4A (AAC)",
   "format.opus": "Opus",
+  "format.plainAudio": "Plain audio",
   "theme.dark": "Dark",
   "theme.light": "Light",
   "theme.sepia": "Sepia",
