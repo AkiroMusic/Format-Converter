@@ -19,6 +19,20 @@ export interface FfmpegStatus {
 }
 
 // ---------------------------------------------------------------------------
+// Detect packaged mode safely across Electron / test / script environments
+// ---------------------------------------------------------------------------
+
+function isPackaged(): boolean {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const { app } = require('electron')
+    return app?.isPackaged === true
+  } catch {
+    return false
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Platform helpers
 // ---------------------------------------------------------------------------
 
@@ -38,9 +52,9 @@ function binExt(): string {
 // ---------------------------------------------------------------------------
 
 function bundledDir(): string {
-  if (process.resourcesPath) {
-    // Packaged: binaries are at process.resourcesPath/ffmpeg/{platform}/
-    return join(process.resourcesPath, 'ffmpeg', platformDir())
+  if (isPackaged()) {
+    // Packaged: binaries live inside the app's resources
+    return join(process.resourcesPath!, 'ffmpeg', platformDir())
   }
   // Dev mode: this file compiles to out/main/, resources is ../../resources/
   return join(__dirname, '..', '..', 'resources', 'ffmpeg', platformDir())
@@ -56,7 +70,6 @@ export function getBundledDir(): string {
 
 function probeBinary(binPath: string): Promise<boolean> {
   return new Promise((resolve) => {
-    // FFmpeg uses single-dash long options (-version, -h), not double-dash
     execFile(binPath, ['-version'], { timeout: 8000 }, (err) => {
       resolve(!err)
     })
@@ -82,7 +95,6 @@ export async function ensureFfmpeg(customFfmpegPath?: string | null): Promise<Ff
   if (customFfmpegPath) {
     if (existsSync(customFfmpegPath) && (await probeBinary(customFfmpegPath))) {
       ffmpegPath = customFfmpegPath
-      // Derive ffprobe from the same directory
       const probeCandidate = join(customFfmpegPath, '..', ffprobeName)
       if (existsSync(probeCandidate) && (await probeBinary(probeCandidate))) {
         ffprobePath = probeCandidate
@@ -106,7 +118,6 @@ export async function ensureFfmpeg(customFfmpegPath?: string | null): Promise<Ff
     return { available: true, ffmpegPath, ffprobePath }
   }
 
-  // Build helpful reason
   const missing: string[] = []
   if (!ffmpegPath) missing.push(ffmpegName)
   if (!ffprobePath) missing.push(ffprobeName)

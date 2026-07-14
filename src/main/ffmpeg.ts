@@ -216,8 +216,8 @@ export async function run(
   } = options
 
   // Resolve binary paths
-  const resolvedFfmpegBin = ffmpegBin ?? resolveFfmpegPath({ isPackaged: false, platform: process.platform })
-  const resolvedFfprobeBin = ffprobeBin ?? resolveFfprobePath({ isPackaged: false, platform: process.platform })
+  const resolvedFfmpegBin = ffmpegBin ?? resolveFfmpegPath({ platform: process.platform })
+  const resolvedFfprobeBin = ffprobeBin ?? resolveFfprobePath({ platform: process.platform })
 
   // --- Build ffmpeg argument list ---
   const args: string[] = [

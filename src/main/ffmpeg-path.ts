@@ -6,26 +6,38 @@
  * Binaries are stored in resources/ffmpeg/{platform}/ and copied
  * into the app resources during build (electron-builder extraResources).
  *
- * Dev mode:  {projectRoot}/resources/ffmpeg/{platform}/
  * Packaged:  {process.resourcesPath}/ffmpeg/{platform}/
+ * Dev/test:  {projectRoot}/resources/ffmpeg/{platform}/
  */
 
 import { existsSync } from 'fs'
 import { join } from 'path'
 
 export interface ResolveOptions {
-  isPackaged: boolean
   platform: NodeJS.Platform
-  resourcesPath?: string
   customFfmpegPath?: string
   customFfprobePath?: string
+}
+
+// ---------------------------------------------------------------------------
+// Detect packaged mode safely across Electron / test / script environments
+// ---------------------------------------------------------------------------
+
+function isPackaged(): boolean {
+  try {
+    // In vitest / plain Node: require('electron') throws -> caught -> false
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const { app } = require('electron')
+    return app?.isPackaged === true
+  } catch {
+    return false
+  }
 }
 
 // ---------------------------------------------------------------------------
 // Platform helpers
 // ---------------------------------------------------------------------------
 
-/** Electron platform directory name under resources/ffmpeg/ */
 function platformDir(platform: NodeJS.Platform): string {
   if (platform === 'win32') return 'win32'
   if (platform === 'darwin') return 'darwin'
@@ -42,12 +54,13 @@ function binExt(platform: NodeJS.Platform): string {
 
 function bundledDir(): string {
   const pDir = platformDir(process.platform)
-  // Use process.resourcesPath if available and packaged
-  // (test env won't have Electron's app, so we use the env-agnostic check)
-  if (process.resourcesPath) {
-    return join(process.resourcesPath, 'ffmpeg', pDir)
+
+  if (isPackaged()) {
+    // Packaged: binaries live inside the app's resources
+    return join(process.resourcesPath!, 'ffmpeg', pDir)
   }
-  // Dev mode: this file compiles to out/main/, resources is ../../resources/
+
+  // Dev / test: project root relative to compiled output (out/main/ -> ../../)
   return join(__dirname, '..', '..', 'resources', 'ffmpeg', pDir)
 }
 
@@ -66,11 +79,11 @@ function resolveBinary(
   if (opts.customFfmpegPath && name === 'ffmpeg') return opts.customFfmpegPath
   if (opts.customFfprobePath && name === 'ffprobe') return opts.customFfprobePath
 
-  // 2) Bundled path (dev or packaged) — uses app.isPackaged internally
+  // 2) Bundled path
   const bundle = join(bundledDir(), binName)
   if (existsSync(bundle)) return bundle
 
-  // 3) Fallback — just return the bare command name (will work if on PATH)
+  // 3) Fallback — bare command name (will work if on PATH)
   return binName
 }
 
