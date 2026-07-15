@@ -322,14 +322,17 @@ export function registerConvertHandlers(getMainWindow: () => BrowserWindow | nul
             let coverPath: string | null = null
             try { coverPath = await writeCoverTemp(coverImage) } catch { /* non-fatal */ }
 
-            const args: string[] = [
-              '-y', '-i', tempInputPath, '-map', '0:a',
-              '-map_metadata', '-1'
-            ]
+            const args: string[] = ['-y', '-i', tempInputPath]
 
             if (coverPath) {
-              args.push('-i', coverPath, '-map', '1:0', '-disposition:v', 'attached_pic')
+              // Cover image as second input stream
+              args.push('-i', coverPath)
+              // Explicit stream mapping: audio from first input, cover from second
+              args.push('-map', '0:a', '-map', '1:0', '-disposition:v', 'attached_pic')
+            } else {
+              args.push('-map', '0:a')
             }
+            args.push('-map_metadata', '-1')
 
             if (sourceFormat === "mp3" || sourceFormat === "m4a" || sourceFormat === "aac") {
               args.push('-write_id3v2', '1')

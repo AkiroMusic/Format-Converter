@@ -277,16 +277,21 @@ export async function run(
   // --- Build ffmpeg argument list ---
   const args: string[] = ['-y']
 
+  // ---- ALL input files declared first (FFmpeg requirement) ----
+  args.push('-i', inputPath)
   if (coverImagePath) {
-    // When a cover image is provided, we must explicitly map streams:
-    //   0:a → audio from the first input
-    //   1:0 → cover image from the second input
-    args.push('-i', inputPath, '-map', '0:a')
-    args.push('-i', coverImagePath, '-map', '1:0', '-disposition:v', 'attached_pic')
-    args.push('-map_metadata', '-1')
-  } else {
-    args.push('-i', inputPath, '-vn', '-map_metadata', '-1')
+    // Cover image as second input stream
+    args.push('-i', coverImagePath)
   }
+
+  // ---- Output options follow AFTER all input declarations ----
+  if (coverImagePath) {
+    // Explicit stream mapping: audio from first input, cover from second
+    args.push('-map', '0:a', '-map', '1:0', '-disposition:v', 'attached_pic')
+  } else {
+    args.push('-vn')
+  }
+  args.push('-map_metadata', '-1')
 
   // Write ID3v2 tags for MP3/M4A output (needed even with metadata flag)
   if (format === 'mp3' || format === 'm4a' || format === 'aac') {
