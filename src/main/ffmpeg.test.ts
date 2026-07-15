@@ -11,7 +11,7 @@ vi.mock('child_process', () => ({
 }))
 
 import { spawn } from 'child_process'
-import { runFfmpeg, probeDuration, run } from './ffmpeg'
+import { runFfmpeg, probeDuration, run, extractLyrics } from './ffmpeg'
 
 // Helper to create a mock child process
 function createMockProcess(): EventEmitter & { stdout: EventEmitter; stderr: EventEmitter; kill: ReturnType<typeof vi.fn> } {
@@ -75,6 +75,59 @@ describe('runFfmpeg', () => {
     mockProc.emit('error', new Error('ENOENT'))
 
     await expect(promise).rejects.toThrow('ENOENT')
+  })
+
+  describe('extractLyrics', () => {
+    it('should parse lyrics from ffprobe output', async () => {
+      const mockProc = createMockProcess()
+      vi.mocked(spawn).mockReturnValue(mockProc as any)
+
+      const promise = extractLyrics('/path/to/file.mp3')
+
+      mockProc.stdout.emit('data', Buffer.from('line1\nline2\nline3'))
+      mockProc.emit('close', 0)
+
+      const result = await promise
+      expect(result).toBe('line1\nline2\nline3')
+    })
+
+    it('should return null when no lyrics tag present', async () => {
+      const mockProc = createMockProcess()
+      vi.mocked(spawn).mockReturnValue(mockProc as any)
+
+      const promise = extractLyrics('/path/to/file.mp3')
+
+      mockProc.stdout.emit('data', Buffer.from(''))
+      mockProc.emit('close', 0)
+
+      const result = await promise
+      expect(result).toBeNull()
+    })
+
+    it('should return null on spawn error', async () => {
+      const mockProc = createMockProcess()
+      vi.mocked(spawn).mockReturnValue(mockProc as any)
+
+      const promise = extractLyrics('/path/to/file.mp3')
+
+      mockProc.emit('error', new Error('ENOENT'))
+
+      const result = await promise
+      expect(result).toBeNull()
+    })
+
+    it('should return null on non-zero exit with no output', async () => {
+      const mockProc = createMockProcess()
+      vi.mocked(spawn).mockReturnValue(mockProc as any)
+
+      const promise = extractLyrics('/path/to/file.mp3')
+
+      mockProc.stdout.emit('data', Buffer.from(''))
+      mockProc.emit('close', 1)
+
+      const result = await promise
+      expect(result).toBeNull()
+    })
   })
 
   it('should kill process on abort', async () => {
@@ -399,6 +452,82 @@ describe('run (high-level conversion)', () => {
     expect(args).toContain('libmp3lame')
     expect(args).toContain('-b:a')
     expect(args).toContain('320k')
+  })
+
+  // ---------------------------------------------------------------------------
+  // Lyrics & loudness argument verification
+  // ---------------------------------------------------------------------------
+
+  it('should pass loudnorm filter when enabled with default target', async () => {
+    const { probeProc, ffmpegProc } = setupFormatTest()
+    const promise = run('/input/test.mp3', '/output/out.mp3', {
+      format: 'mp3',
+      loudnormEnabled: true,
+      loudnormTarget: -14
+    })
+    await completeFormatTest(promise, probeProc, ffmpegProc)
+
+    const args = vi.mocked(spawn).mock.calls[1][1]
+    const afIdx = args.indexOf('-af')
+    expect(afIdx).toBeGreaterThanOrEqual(0)
+    expect(args[afIdx + 1]).toContain('loudnorm=I=-14:LRA=7:TP=-1')
+  })
+
+  it('should pass loudnorm filter with custom target', async () => {
+    const { probeProc, ffmpegProc } = setupFormatTest()
+    const promise = run('/input/test.mp3', '/output/out.mp3', {
+      format: 'mp3',
+      loudnormEnabled: true,
+      loudnormTarget: -9
+    })
+    await completeFormatTest(promise, probeProc, ffmpegProc)
+
+    const args = vi.mocked(spawn).mock.calls[1][1]
+    const afIdx = args.indexOf('-af')
+    expect(args[afIdx + 1]).toContain('loudnorm=I=-9:LRA=7:TP=-1')
+  })
+
+  it('should not pass loudnorm filter when disabled', async () => {
+    const { probeProc, ffmpegProc } = setupFormatTest()
+    const promise = run('/input/test.mp3', '/output/out.mp3', {
+      format: 'mp3',
+      loudnormEnabled: false,
+      loudnormTarget: -14
+    })
+    await completeFormatTest(promise, probeProc, ffmpegProc)
+
+    const args = vi.mocked(spawn).mock.calls[1][1]
+    expect(args).not.toContain('-af')
+  })
+
+  it('should pass loudnorm filter before codec args', async () => {
+    const { probeProc, ffmpegProc } = setupFormatTest()
+    const promise = run('/input/test.mp3', '/output/out.mp3', {
+      format: 'mp3',
+      loudnormEnabled: true,
+      loudnormTarget: -14
+    })
+    await completeFormatTest(promise, probeProc, ffmpegProc)
+
+    const args = vi.mocked(spawn).mock.calls[1][1]
+    const afIdx = args.indexOf('-af')
+    const codecIdx = args.indexOf('-codec:a')
+    expect(afIdx).toBeGreaterThanOrEqual(0)
+    expect(codecIdx).toBeGreaterThan(afIdx)
+  })
+
+  it('should pass lyrics metadata when provided', async () => {
+    const { probeProc, ffmpegProc } = setupFormatTest()
+    const promise = run('/input/test.mp3', '/output/out.mp3', {
+      format: 'mp3',
+      lyrics: 'line1\nline2'
+    })
+    await completeFormatTest(promise, probeProc, ffmpegProc)
+
+    const args = vi.mocked(spawn).mock.calls[1][1]
+    const metaIdx = args.indexOf('-metadata')
+    expect(metaIdx).toBeGreaterThanOrEqual(0)
+    expect(args[metaIdx + 1]).toContain('lyrics=line1')
   })
 })
 

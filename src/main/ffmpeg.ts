@@ -44,6 +44,12 @@ export interface FfmpegOptions {
   metadata?: Record<string, string>
   /** Path to a cover image file to embed */
   coverImagePath?: string
+  /** Lyrics text to embed (FLAC Vorbis comment / MP3 ID3 USLT) */
+  lyrics?: string
+  /** Apply EBU R128 loudness normalization */
+  loudnormEnabled?: boolean
+  /** Target loudness in LUFS (-23 to -9, default -14) */
+  loudnormTarget?: number
 }
 
 export interface FfmpegResult {
@@ -189,6 +195,46 @@ export async function probeDuration(
 }
 
 // ---------------------------------------------------------------------------
+// extractLyrics: pull lyrics tag from an audio file via ffprobe
+// ---------------------------------------------------------------------------
+
+/**
+ * Extract the `lyrics` tag from an audio file using ffprobe.
+ * Returns the lyrics text, or null if no lyrics tag is present.
+ */
+export async function extractLyrics(
+  filePath: string,
+  opts: { ffprobeBin?: string } = {}
+): Promise<string | null> {
+  const bin = opts.ffprobeBin ?? 'ffprobe'
+
+  return new Promise<string | null>((resolve) => {
+    const proc = spawn(bin, [
+      '-v', 'error',
+      '-show_entries', 'format_tags=lyrics',
+      '-of', 'default=noprint_wrappers=1:nokey=1',
+      filePath
+    ], {
+      stdio: ['ignore', 'pipe', 'pipe']
+    })
+
+    let out = ''
+    proc.stdout.on('data', (chunk: Buffer) => {
+      out += chunk.toString()
+    })
+
+    proc.on('close', () => {
+      const trimmed = out.trim()
+      resolve(trimmed || null)
+    })
+
+    proc.on('error', () => {
+      resolve(null)
+    })
+  })
+}
+
+// ---------------------------------------------------------------------------
 // High-level: run
 // ---------------------------------------------------------------------------
 
@@ -218,7 +264,10 @@ export async function run(
     ffmpegBin,
     ffprobeBin,
     metadata,
-    coverImagePath
+    coverImagePath,
+    lyrics,
+    loudnormEnabled,
+    loudnormTarget
   } = options
 
   // Resolve binary paths
@@ -249,6 +298,16 @@ export async function run(
     for (const [key, value] of Object.entries(metadata)) {
       if (value) args.push('-metadata', `${key}=${value}`)
     }
+  }
+
+  // Embed lyrics if provided
+  if (options.lyrics) {
+    args.push('-metadata', `lyrics=${options.lyrics}`)
+  }
+
+  // Apply loudness normalization filter (EBU R128)
+  if (options.loudnormEnabled && options.loudnormTarget != null) {
+    args.push('-af', `loudnorm=I=${options.loudnormTarget}:LRA=7:TP=-1`)
   }
 
   switch (format) {
