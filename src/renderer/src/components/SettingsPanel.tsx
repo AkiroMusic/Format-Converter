@@ -899,6 +899,78 @@ function SettingsPanel(): JSX.Element {
         )}
       </div>
 
+      {/* Embed companion lyrics */}
+      <div style={{ marginBottom: 'var(--space-6)' }}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', fontSize: '14px', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+          <input
+            type="checkbox"
+            checked={settings.embedCompanionLyrics}
+            onChange={(e) => {
+              setSettings({ embedCompanionLyrics: e.target.checked })
+              window.formatConverter.setSettings({ embedCompanionLyrics: e.target.checked })
+            }}
+            style={{ accentColor: 'var(--accent)' }}
+          />
+          {t('lyrics.embedSetting')}
+        </label>
+      </div>
+
+      {/* Loudness Normalization */}
+      <div style={{ marginBottom: 'var(--space-6)' }}>
+        <h3
+          style={{
+            fontFamily: "'Fraunces', serif",
+            fontSize: '16px',
+            color: 'var(--text-primary)',
+            marginBottom: 'var(--space-6)',
+            fontWeight: 600
+          }}
+        >
+          {t('loudness.title')}
+        </h3>
+        <div style={{ marginBottom: 'var(--space-5)' }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', fontSize: '14px', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+            <input
+              type="checkbox"
+              checked={settings.loudnormEnabled}
+              onChange={(e) => {
+                setSettings({ loudnormEnabled: e.target.checked })
+                window.formatConverter.setSettings({ loudnormEnabled: e.target.checked })
+              }}
+              style={{ accentColor: 'var(--accent)' }}
+            />
+            {t('loudness.enable')}
+          </label>
+          {settings.loudnormEnabled && (
+            <div style={{ marginTop: 'var(--space-3)' }}>
+              <label style={{ display: 'block', fontSize: '14px', color: 'var(--text-secondary)', marginBottom: 'var(--space-2)' }}>
+                {t('loudness.target')}: <strong>{settings.loudnormTarget} LUFS</strong>
+              </label>
+              <input
+                type="range"
+                min={-23}
+                max={-9}
+                step={0.5}
+                value={settings.loudnormTarget}
+                onChange={(e) => {
+                  const val = parseFloat(e.target.value)
+                  setSettings({ loudnormTarget: val })
+                  window.formatConverter.setSettings({ loudnormTarget: val })
+                }}
+                style={{ width: '100%', accentColor: 'var(--accent)', height: '6px', cursor: 'pointer' }}
+              />
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-tertiary)' }}>
+                <span>-23 LUFS (quieter)</span>
+                <span>-9 LUFS (louder)</span>
+              </div>
+              <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginTop: 'var(--space-2)' }}>
+                {t('loudness.targetHint')}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* Max Concurrent Conversions + Auto */}
       <div style={{ marginBottom: 'var(--space-6)' }}>
         <label style={{ display: 'block', fontSize: '14px', color: 'var(--text-secondary)', marginBottom: 'var(--space-2)' }}>

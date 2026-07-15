@@ -197,5 +197,15 @@
   "ffmpeg.selectBinary": "Select Binary...",
   "ffmpeg.selectBinaryTitle": "Select the ffmpeg executable file itself (not the folder). FFprobe will be auto-detected from the same directory.",
   "ffmpeg.selectSuccess": "FFmpeg found at: {path}",
-  "ffmpeg.selectFailed": "FFmpeg not available at selected path"
+  "ffmpeg.selectFailed": "FFmpeg not available at selected path",
+  "dropzone.filesFiltered": "{count} file(s) filtered out (unsupported format)",
+  "lyrics.extract": "Extract Lyrics",
+  "lyrics.noLyricsFound": "No embedded lyrics found",
+  "lyrics.embedSetting": "Embed companion .lrc files during conversion",
+  "lyrics.dialogTitle": "Lyrics",
+  "lyrics.extractError": "Failed to extract lyrics",
+  "loudness.title": "Loudness Normalization",
+  "loudness.enable": "Normalize loudness (EBU R128)",
+  "loudness.target": "Target Loudness",
+  "loudness.targetHint": "-14 LUFS is the standard for streaming platforms (Spotify, Apple Music, YouTube). Lower values produce louder output."
 }

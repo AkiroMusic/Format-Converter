@@ -197,5 +197,15 @@
   "ffmpeg.selectBinary": "选择二进制文件...",
   "ffmpeg.selectBinaryTitle": "请选择 ffmpeg 可执行文件本身（不是文件夹）。ffprobe 会自动从同目录检测。",
   "ffmpeg.selectSuccess": "FFmpeg 已定位：{path}",
-  "ffmpeg.selectFailed": "所选路径未找到 FFmpeg"
+  "ffmpeg.selectFailed": "所选路径未找到 FFmpeg",
+  "dropzone.filesFiltered": "已过滤 {count} 个不支持的格式文件",
+  "lyrics.extract": "提取歌词",
+  "lyrics.noLyricsFound": "未找到嵌入式歌词",
+  "lyrics.embedSetting": "转换时自动嵌入同目录 .lrc 歌词文件",
+  "lyrics.dialogTitle": "歌词",
+  "lyrics.extractError": "提取歌词失败",
+  "loudness.title": "响度标准化",
+  "loudness.enable": "启用响度标准化 (EBU R128)",
+  "loudness.target": "目标响度",
+  "loudness.targetHint": "-14 LUFS 是流媒体平台（Spotify、Apple Music、YouTube）的标准。较低的值会产生更大的音量。"
 }
