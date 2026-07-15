@@ -15,7 +15,7 @@ export function createWindow(): BrowserWindow {
     minHeight: 640,
     show: false,
     frame: false,
-    titleBarStyle: 'hidden',
+    titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'hidden',
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       contextIsolation: true,

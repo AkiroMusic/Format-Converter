@@ -6,12 +6,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAppStore } from '../store/useAppStore'
-
-function formatTime(seconds: number): string {
-  const mins = Math.floor(seconds / 60)
-  const secs = Math.floor(seconds % 60)
-  return `${mins}:${secs.toString().padStart(2, '0')}`
-}
+import { formatTime, formatVolume } from '../utils/player'
 
 function PlayerBar(): JSX.Element {
   const { t } = useTranslation()
@@ -175,7 +170,7 @@ function PlayerBar(): JSX.Element {
     >
       <div
         className="flex items-center"
-        style={{ maxWidth: '720px', margin: '0 auto', gap: '12px' }}
+        style={{ width: '100%', maxWidth: '960px', margin: '0 auto', gap: '9px' }}
       >
         {/* Cover */}
         <img
@@ -209,37 +204,38 @@ function PlayerBar(): JSX.Element {
             {currentFile.artist || t('player.placeholder')}
           </div>
 
-          {/* Progress bar (clickable) */}
+          {/* Progress bar row with inline time display */}
           <div
-            onClick={handleSeek}
-            style={{
-              width: '100%',
-              height: '4px',
-              backgroundColor: 'var(--border)',
-              borderRadius: '2px',
-              marginTop: '6px',
-              cursor: 'pointer',
-              position: 'relative'
-            }}
+            className="flex items-center"
+            style={{ gap: '8px', marginTop: '6px' }}
           >
+            <span style={{ fontSize: '12px', color: 'var(--text-secondary)', minWidth: '35px', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+              {formatTime(currentTime)}
+            </span>
             <div
+              onClick={handleSeek}
               style={{
-                width: `${duration > 0 ? (currentTime / duration) * 100 : 0}%`,
-                height: '100%',
-                backgroundColor: 'var(--accent)',
+                flex: 1,
+                height: '4px',
+                backgroundColor: 'var(--border)',
                 borderRadius: '2px',
-                transition: 'width 0.1s linear'
+                cursor: 'pointer',
+                position: 'relative'
               }}
-            />
-          </div>
-
-          {/* Time display */}
-          <div
-            className="flex justify-between"
-            style={{ fontSize: '11px', color: 'var(--text-tertiary)', marginTop: '2px' }}
-          >
-            <span>{formatTime(currentTime)}</span>
-            <span>{formatTime(duration)}</span>
+            >
+              <div
+                style={{
+                  width: `${duration > 0 ? (currentTime / duration) * 100 : 0}%`,
+                  height: '100%',
+                  backgroundColor: 'var(--accent)',
+                  borderRadius: '2px',
+                  transition: 'width 0.1s linear'
+                }}
+              />
+            </div>
+            <span style={{ fontSize: '12px', color: 'var(--text-secondary)', minWidth: '35px', fontVariantNumeric: 'tabular-nums' }}>
+              {formatTime(duration)}
+            </span>
           </div>
         </div>
 
@@ -380,6 +376,9 @@ function PlayerBar(): JSX.Element {
             }}
             title={t('player.volume')}
           />
+          <span style={{ fontSize: '12px', color: 'var(--text-secondary)', minWidth: '32px', textAlign: 'right' }}>
+            {formatVolume(volume)}
+          </span>
         </div>
 
         {/* Close button */}

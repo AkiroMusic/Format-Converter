@@ -3,7 +3,7 @@
  * Copyright (c) 2026 Akiro. All rights reserved.
  */
 
-import { app, BrowserWindow, ipcMain } from 'electron'
+import { app, BrowserWindow, ipcMain, Menu } from 'electron'
 import { electronApp, optimizer } from '@electron-toolkit/utils'
 import { createWindow } from './window'
 import { registerDialogHandlers } from './ipc/dialog'
@@ -82,72 +82,70 @@ app.whenReady().then(async () => {
     optimizer.watchWindowShortcuts(window)
   })
 
-  // --- Register IPC handlers (before FFmpeg check so settings are ready) ---
-  registerDialogHandlers()
-  registerConvertHandlers(getMainWindow)
-  registerSettingsHandlers()
-  registerShellHandlers()
-  registerHistoryHandlers()
-  registerKggHandlers()
-  registerZipHandlers()
-  registerNotificationHandlers()
-  registerThemeHandlers(getMainWindow)
+    // --- Register IPC handlers ---
+    registerDialogHandlers()
+    registerConvertHandlers(getMainWindow)
+    registerSettingsHandlers()
+    registerShellHandlers()
+    registerHistoryHandlers()
+    registerKggHandlers()
+    registerZipHandlers()
+    registerNotificationHandlers()
+    registerThemeHandlers(getMainWindow)
 
-  // --- FFmpeg health check (after settings are loaded so we have customFfmpegPath) ---
-  await refreshFfmpegStatus()
-
-  // Window title IPC
-  ipcMain.handle('window:setTitle', (_event, title: string): void => {
-    mainWindow?.setTitle(title || 'Format Converter')
-  })
-
-  // FFmpeg status IPC — return cached status
-  ipcMain.handle('ffmpeg:getStatus', async (): Promise<FfmpegStatus> => {
-    return ffmpegStatus
-  })
-
-  // Re-check FFmpeg (e.g. after user sets custom path via Select Binary)
-  ipcMain.handle('ffmpeg:recheck', async (): Promise<FfmpegStatus> => {
-    return await refreshFfmpegStatus()
-  })
-
-  // Window control IPC
-  ipcMain.handle('window:minimize', () => {
-    mainWindow?.minimize()
-  })
-
-  ipcMain.handle('window:maximize', () => {
-    if (mainWindow?.isMaximized()) {
-      mainWindow.unmaximize()
-    } else {
-      mainWindow?.maximize()
-    }
-  })
-
-  ipcMain.handle('window:isMaximized', (): boolean => {
-    return mainWindow?.isMaximized() ?? false
-  })
-
-  ipcMain.handle('window:fullscreen', () => {
-    const isFullScreen = mainWindow?.isFullScreen() ?? false
-    mainWindow?.setFullScreen(!isFullScreen)
-  })
-
-  mainWindow = createWindow()
-
-  // If launched via file association (first instance on Windows),
-  // check process.argv for file paths
-  const startupPaths = extractFilePathsFromArgv(process.argv)
-  if (startupPaths.length > 0) {
-    mainWindow.webContents.once('did-finish-load', () => {
-      sendFilesToRenderer(startupPaths)
+    // Window title IPC
+    ipcMain.handle('window:setTitle', (_event, title: string): void => {
+      mainWindow?.setTitle(title || 'Format Converter')
     })
-  }
 
-  // Send ffmpeg status to renderer once window is ready
-  mainWindow.on('ready-to-show', () => {
-    mainWindow?.webContents.send('ffmpeg:statusChanged', ffmpegStatus)
-  })
+    // FFmpeg status IPC — return cached status (updated async below)
+    ipcMain.handle('ffmpeg:getStatus', async (): Promise<FfmpegStatus> => {
+      return ffmpegStatus
+    })
+
+    // Re-check FFmpeg (e.g. after user sets custom path via Select Binary)
+    ipcMain.handle('ffmpeg:recheck', async (): Promise<FfmpegStatus> => {
+      return await refreshFfmpegStatus()
+    })
+
+    // Window control IPC
+    ipcMain.handle('window:minimize', () => {
+      mainWindow?.minimize()
+    })
+
+    ipcMain.handle('window:maximize', () => {
+      if (mainWindow?.isMaximized()) {
+        mainWindow.unmaximize()
+      } else {
+        mainWindow?.maximize()
+      }
+    })
+
+    ipcMain.handle('window:isMaximized', (): boolean => {
+      return mainWindow?.isMaximized() ?? false
+    })
+
+    ipcMain.handle('window:fullscreen', () => {
+      const isFullScreen = mainWindow?.isFullScreen() ?? false
+      mainWindow?.setFullScreen(!isFullScreen)
+    })
+
+    // Create window first — show UI immediately without waiting for FFmpeg check
+    mainWindow = createWindow()
+
+    // If launched via file association (first instance on Windows),
+    // check process.argv for file paths
+    const startupPaths = extractFilePathsFromArgv(process.argv)
+    if (startupPaths.length > 0) {
+      mainWindow.webContents.once('did-finish-load', () => {
+        sendFilesToRenderer(startupPaths)
+      })
+    }
+
+    // Run FFmpeg health check in the background — does NOT block the window
+    // The renderer subscribes to 'ffmpeg:statusChanged' and will receive the
+    // result as soon as the check completes.
+    refreshFfmpegStatus()
 
   // Forward maximize/unmaximize events to renderer
   mainWindow.on('maximize', () => {
@@ -164,14 +162,78 @@ app.whenReady().then(async () => {
   })
 })
 
-app.on('window-all-closed', () => {
-  if (process.platform !== 'win32') {
-    app.quit()
-  }
-})
-
 // ---- macOS: open-file event (file association / drag to dock icon) ----
 app.on('open-file', (event, filePath) => {
   event.preventDefault()
   sendFilesToRenderer([filePath])
 })
+
+app.on('window-all-closed', () => {
+  // macOS convention: app stays open when all windows close
+  // Windows convention: app quits when all windows close
+  if (process.platform === 'win32') {
+    app.quit()
+  }
+})
+
+// ---- macOS app menu ----
+if (process.platform === 'darwin') {
+  Menu.setApplicationMenu(
+    Menu.buildFromTemplate([
+      {
+        label: app.name,
+        submenu: [
+          { role: 'about' },
+          { type: 'separator' },
+          { role: 'services' },
+          { type: 'separator' },
+          { role: 'hide' },
+          { role: 'hideOthers' },
+          { role: 'unhide' },
+          { type: 'separator' },
+          { role: 'quit' }
+        ]
+      },
+      {
+        label: 'File',
+        submenu: [
+          { role: 'close' }
+        ]
+      },
+      {
+        label: 'Edit',
+        submenu: [
+          { role: 'undo' },
+          { role: 'redo' },
+          { type: 'separator' },
+          { role: 'cut' },
+          { role: 'copy' },
+          { role: 'paste' },
+          { role: 'selectAll' }
+        ]
+      },
+      {
+        label: 'View',
+        submenu: [
+          { role: 'reload' },
+          { role: 'toggleDevTools' },
+          { type: 'separator' },
+          { role: 'resetZoom' },
+          { role: 'zoomIn' },
+          { role: 'zoomOut' },
+          { type: 'separator' },
+          { role: 'togglefullscreen' }
+        ]
+      },
+      {
+        label: 'Window',
+        submenu: [
+          { role: 'minimize' },
+          { role: 'zoom' },
+          { type: 'separator' },
+          { role: 'front' }
+        ]
+      }
+    ])
+  )
+}
