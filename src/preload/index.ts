@@ -136,6 +136,9 @@ const formatConverterAPI = {
     return () => ipcRenderer.removeListener('window:maximizeChanged', handler)
   },
 
+  extractLyrics: (filePath: string): Promise<string | null> =>
+    ipcRenderer.invoke('lyrics:extract', filePath),
+
   getPathForFile: (file: File): string => {
     return webUtils.getPathForFile(file)
   },

@@ -45,6 +45,9 @@ interface AppSettingsData {
   selectedPreset: string
   presets: PresetData[]
   customFfmpegPath?: string
+  embedCompanionLyrics: boolean
+  loudnormEnabled: boolean
+  loudnormTarget: number
 }
 
 interface FormatConverterAPI {
@@ -119,6 +122,7 @@ interface FormatConverterAPI {
   onMaximizeChange(callback: (isMaximized: boolean) => void): () => void
   getPathForFile(file: File): string
 
+  extractLyrics(filePath: string): Promise<string | null>
   getFfmpegStatus(): Promise<FfmpegStatusData>
   onFfmpegStatusChanged(callback: (status: FfmpegStatusData) => void): () => void
   onFilesOpenedFromOs(callback: (filePaths: string[]) => void): () => void
