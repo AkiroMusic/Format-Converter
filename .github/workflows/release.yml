@@ -54,9 +54,9 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release upload v1.0.2 release/*.dmg --clobber
-          gh release upload v1.0.2 release/*.dmg.blockmap --clobber || true
-          gh release upload v1.0.2 release/latest-mac.yml --clobber || true
+          gh release upload v1.1.0 release/*.dmg --clobber
+          gh release upload v1.1.0 release/*.dmg.blockmap --clobber || true
+          gh release upload v1.1.0 release/latest-mac.yml --clobber || true
 
   release:
     needs: [build-win, build-mac]
